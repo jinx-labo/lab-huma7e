@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>huma7e — Liste de courses</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f5f2;
+    --surface: #ffffff;
+    --primary: #3d6b4f;
+    --primary-light: #e8f0eb;
+    --accent: #e07b54;
+    --text: #1e1e1e;
+    --muted: #888;
+    --border: #e2ddd8;
+    --radius: 14px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  header {
+    background: var(--primary);
+    color: #fff;
+    padding: 22px 20px 18px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 10px rgba(61,107,79,0.25);
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  header h1 span {
+    color: #a8d5b5;
+    font-weight: 400;
+  }
+
+  .stats {
+    font-size: 0.8rem;
+    color: #a8d5b5;
+    margin-top: 3px;
+  }
+
+  .add-bar {
+    display: flex;
+    gap: 10px;
+    padding: 16px 16px 8px;
+    position: sticky;
+    top: 72px;
+    z-index: 9;
+    background: var(--bg);
+  }
+
+  .add-bar input {
+    flex: 1;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 16px;
+    font-size: 1rem;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .add-bar input:focus {
+    border-color: var(--primary);
+  }
+
+  .add-bar input::placeholder { color: var(--muted); }
+
+  .btn-add {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    width: 50px;
+    height: 50px;
+    font-size: 1.6rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: var(--shadow);
+  }
+
+  .btn-add:active { transform: scale(0.93); background: #2e5440; }
+
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 18px 4px;
+  }
+
+  .list {
+    padding: 0 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .item {
+    background: var(--surface);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 14px;
+    box-shadow: var(--shadow);
+    border: 1.5px solid transparent;
+    transition: border-color 0.2s, opacity 0.2s, background 0.2s;
+    animation: slideIn 0.2s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .item.done {
+    background: #f9f9f9;
+    opacity: 0.6;
+    border-color: var(--border);
+  }
+
+  .checkbox {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s;
+    background: #fff;
+  }
+
+  .item.done .checkbox {
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .checkbox svg {
+    display: none;
+  }
+
+  .item.done .checkbox svg {
+    display: block;
+  }
+
+  .item-name {
+    flex: 1;
+    font-size: 1rem;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .item.done .item-name {
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  .item-qty {
+    font-size: 0.82rem;
+    color: var(--primary);
+    background: var(--primary-light);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .btn-del {
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 4px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    transition: color 0.2s;
+    line-height: 1;
+  }
+
+  .btn-del:hover, .btn-del:focus { color: var(--accent); }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 48px 24px;
+    font-size: 0.95rem;
+    line-height: 1.8;
+  }
+
+  .empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+  .footer-actions {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    background: var(--bg);
+    border-top: 1.5px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+  }
+
+  .btn-footer {
+    flex: 1;
+    border: none;
+    border-radius: var(--radius);
+    padding: 13px 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .btn-footer:active { transform: scale(0.97); }
+
+  .btn-clear-done {
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  .btn-clear-done:hover { background: #d2e6d9; }
+
+  .btn-clear-all {
+    background: #fde8e0;
+    color: var(--accent);
+  }
+
+  .btn-clear-all:hover { background: #f9d0c2; }
+
+  .qty-input {
+    width: 70px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 10px;
+    font-size: 0.95rem;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+    text-align: center;
+  }
+
+  .qty-input:focus { border-color: var(--primary); }
+
+  @media (min-width: 520px) {
+    body { max-width: 500px; margin: 0 auto; }
+    header { border-radius: 0 0 var(--radius) var(--radius); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>huma7e <span>courses</span></h1>
+  <div class="stats" id="stats">Aucun article</div>
+</header>
+
+<div class="add-bar">
+  <input type="text" id="itemInput" placeholder="Ajouter un article…" autocomplete="off" inputmode="text">
+  <input type="text" id="qtyInput" class="qty-input" placeholder="qté" inputmode="text">
+  <button class="btn-add" id="addBtn" aria-label="Ajouter">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="11" y1="3" x2="11" y2="19" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="3" y1="11" x2="19" y2="11" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+  </button>
+</div>
+
+<div id="mainList">
+  <div class="list" id="todoList"></div>
+  <div id="doneSection" style="display:none">
+    <div class="section-label">✓ Dans le panier</div>
+    <div class="list" id="doneList"></div>
+  </div>
+</div>
+
+<div class="empty" id="emptyMsg">
+  <div class="empty-icon">🛒</div>
+  Votre liste est vide.<br>Ajoutez un article ci-dessus !
+</div>
+
+<div class="footer-actions">
+  <button class="btn-footer btn-clear-done" id="clearDoneBtn">Retirer cochés</button>
+  <button class="btn-footer btn-clear-all" id="clearAllBtn">Tout effacer</button>
+</div>
+
+<script>
+  const STORAGE_KEY = 'huma7e_items';
+
+  let items = [];
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) items = JSON.parse(raw);
+    } catch(e) { items = []; }
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
+  }
+
+  function makeItemEl(item) {
+    const div = document.createElement('div');
+    div.className = 'item' + (item.done ? ' done' : '');
+    div.dataset.id = item.id;
+
+    const chk = document.createElement('div');
+    chk.className = 'checkbox';
+    chk.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <polyline points="2,7 6,11 12,3" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+    chk.addEventListener('click', () => toggleItem(item.id));
+
+    const name = document.createElement('div');
+    name.className = 'item-name';
+    name.textContent = item.name;
+
+    const del = document.createElement('button');
+    del.className = 'btn-del';
+    del.innerHTML = '&times;';
+    del.setAttribute('aria-label', 'Supprimer');
+    del.addEventListener('click', () => removeItem(item.id));
+
+    div.appendChild(chk);
+    div.appendChild(name);
+
+    if (item.qty && item.qty.trim()) {
+      const qty = document.createElement('span');
+      qty.className = 'item-qty';
+      qty.textContent = item.qty;
+      div.appendChild(qty);
+    }
+
+    div.appendChild(del);
+    return div;
+  }
+
+  function render() {
+    const todoList = document.getElementById('todoList');
+    const doneList = document.getElementById('doneList');
+    const doneSection = document.getElementById('doneSection');
+    const emptyMsg = document.getElementById('emptyMsg');
+    const statsEl = document.getElementById('stats');
+
+    todoList.innerHTML = '';
+    doneList.innerHTML = '';
+
+    const todo = items.filter(i => !i.done);
+    const done = items.filter(i => i.done);
+
+    todo.forEach(item => todoList.appendChild(makeItemEl(item)));
+    done.forEach(item => doneList.appendChild(makeItemEl(item)));
+
+    doneSection.style.display = done.length ? 'block' : 'none';
+    emptyMsg.style.display = items.length === 0 ? 'block' : 'none';
+
+    const total = items.length;
+    const doneCount = done.length;
+
+    if (total === 0) {
+      statsEl.textContent = 'Aucun article';
+    } else {
+      statsEl.textContent = `${doneCount} / ${total} article${total > 1 ? 's' : ''} coché${doneCount > 1 ? 's' : ''}`;
+    }
+  }
+
+  function addItem() {
+    const input = document.getElementById('itemInput');
+    const qtyInput = document.getElementById('qtyInput');
+    const name = input.value.trim();
+    if (!name) {
+      input.focus();
+      input.style.borderColor = 'var(--accent)';
+      setTimeout(() => input.style.borderColor = '', 800);
+      return;
+    }
+    items.unshift({ id: uid(), name, qty: qtyInput.value.trim(), done: false });
+    save();
+    render();
+    input.value = '';
+    qtyInput.value = '';
+    input.focus();
+  }
+
+  function toggleItem(id) {
+    const item = items.find(i => i.id === id);
+    if (item) { item.done = !item.done; save(); render(); }
+  }
+
+  function removeItem(id) {
+    items = items.filter(i => i.id !== id);
+    save();
+    render();
+  }
+
+  document.getElementById('addBtn').addEventListener('click', addItem);
+
+  document.getElementById('itemInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addItem();
+  });
+
+  document.getElementById('qtyInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addItem();
+  });
+
+  document.getElementById('clearDoneBtn').addEventListener('click', () => {
+    if (!items.some(i => i.done)) return;
+    if (confirm('Retirer tous les articles cochés ?')) {
+      items = items.filter(i => !i.done);
+      save();
+      render();
+    }
+  });
+
+  document.getElementById('clearAllBtn').addEventListener('click', () => {
+    if (items.length === 0) return;
+    if (confirm('Effacer toute la liste ?')) {
+      items = [];
+      save();
+      render();
+    }
+  });
+
+  load();
+  render();
+</script>
+</body>
+</html>
